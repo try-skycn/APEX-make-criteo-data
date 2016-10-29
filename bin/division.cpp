@@ -2,7 +2,7 @@
 
 typedef unsigned int uint;
 
-const int MAXBUFF = 256;
+const int MAXBUFF = 65536;
 const char NEWLINE = '\n';
 
 class Source {
@@ -51,6 +51,7 @@ public:
 			for (; *str && *str != ' ' && *str != '\t' && *str != '\n'; ++str) {
 				fwrite(str, sizeof(char), 1, parents[i]);
 			}
+			++str;
 			fwrite(&NEWLINE, sizeof(char), 1, parents[i]);
 		}
 	}

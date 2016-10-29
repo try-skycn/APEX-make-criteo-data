@@ -5,7 +5,7 @@
 
 typedef unsigned int uint;
 
-const uint MAXPOOL = 1 << 22;
+const uint MAXPOOL = 1 << 28;
 const uint MAXBUFF = 256;
 
 class Source {

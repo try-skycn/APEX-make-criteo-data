@@ -4,8 +4,6 @@
 
 typedef unsigned int uint;
 
-const uint MAXFILE = 1 << 5;
-const uint MAXPOOL = 1 << 20;
 const uint MAXBUFF = 256;
 
 class Source {

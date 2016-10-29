@@ -2,7 +2,7 @@
 
 typedef unsigned int uint;
 
-const uint MAXNUM = 1 << 22;
+const uint MAXNUM = 1 << 25;
 
 const char *sourcefile;
 const char *targetfile;
