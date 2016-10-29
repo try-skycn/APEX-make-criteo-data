@@ -1,4 +1,9 @@
 #!/bin/bash
+if [$# -ne 3]; then
+	echo "Parameters not match"
+	exit 1
+fi
+
 DIR=${BASH_SOURCE[0]}/bin
 DIVISION=$DIR/division
 LABELINDEX=$DIR/labelindex
