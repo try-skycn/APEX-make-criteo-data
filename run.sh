@@ -35,6 +35,9 @@ echo "target: $TARGET"
 NUMTHRESHOLD=$4
 CATETHRESHOLD=$5
 
+echo "numerical field threshold: $NUMTHRESHOLD"
+echo "categorical field threshold: $CATETHRESHOLD"
+
 mkdir -p $DIVDIR
 echo $DIVISION $TARGET $DIVDIR
 $DIVISION $TARGET $DIVDIR/$TARGET $TOTALFIELD 1> $OUT
