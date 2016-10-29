@@ -1,5 +1,5 @@
 #!/bin/bash
-if [[ $# -ne 4 ]]; then
+if [[ $# -ne 5 ]]; then
 	echo "Parameters not match"
 	exit 1
 fi
@@ -28,20 +28,24 @@ TOTALFIELD=40
 NUMFIELD=$(seq 1 13)
 CATEFIELD=$(seq 14 39)
 TRAINNUM=$2
-TESTNUM=$3
-CHUNKS=$4
+CHUNKS=$3
 
 echo "target: $TARGET"
-echo "#train-set: $TRAINNUM"
-echo "#test-set: $TESTNUM"
-echo "chunks: $CHUNKS"
 
-NUMTHRESHOLD=1000
-CATETHRESHOLD=5
+NUMTHRESHOLD=$4
+CATETHRESHOLD=$5
 
 mkdir -p $DIVDIR
 echo $DIVISION $TARGET $DIVDIR
-$DIVISION $TARGET $DIVDIR/$TARGET $TOTALFIELD
+$DIVISION $TARGET $DIVDIR/$TARGET $TOTALFIELD 1> $OUT
+TOTAL=$(cat $OUT)
+rm $OUT
+
+TESTNUM=$((TOTAL-TRAINNUM))
+echo "train-set: $TRAINNUM"
+echo "test-set: $TESTNUM"
+echo "total: $TOTAL"
+echo "chunks: $CHUNKS"
 
 cd $DIVDIR
 
