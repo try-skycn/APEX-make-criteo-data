@@ -1,5 +1,5 @@
 #!/bin/bash
-DIR=$(pwd)/bin
+DIR=${BASH_SOURCE[0]}/bin
 DIVISION=$DIR/division
 LABELINDEX=$DIR/labelindex
 SORT=$DIR/sort
@@ -7,9 +7,12 @@ COUNT=$DIR/count
 NUMCOUNT=$DIR/numcount
 INDEX=$DIR/index
 NUMINDEX=$DIR/numindex
+PYTHON=python3
+TRANSFER=${BASH_SOURCE[0]}/py/transfer.py
 
 TARGET=sample
 DIVDIR=$TARGET.div
+INDEXDIR=$TARGET.index
 LOG=log
 TMP=tmp
 OUT=out
@@ -17,6 +20,8 @@ OUT=out
 TOTALFIELD=40
 NUMFIELD=$(seq 1 13)
 CATEFIELD=$(seq 14 39)
+TRAINNUM=8000000
+TESTNUM=2000000
 
 NUMTHRESHOLD=1000
 CATETHRESHOLD=5
@@ -78,3 +83,12 @@ for i in $CATEFIELD; do
 done
 
 cd ..
+
+echo $PYTHON $TRANSFER $DIVDIR/$TARGET.{}.feat $TARGET.h5 --train $TRAINNUM --test $TESTNUM --fieldnum $TOTALFIELD --intervals $DIVDIR/$LOG
+$PYTHON $TRANSFER $DIVDIR/$TARGET.{}.feat $TARGET.h5 --train $TRAINNUM --test $TESTNUM --fieldnum $TOTALFIELD --intervals $DIVDIR/$LOG
+
+mkdir -p $INDEXDIR
+mv $DIVDIR/$TARGET.*.index $INDEXDIR/
+rm -r $DIVDIR
+
+echo Done.
