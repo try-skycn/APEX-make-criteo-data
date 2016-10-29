@@ -1,21 +1,23 @@
 #!/bin/bash
-if [$# -ne 3]; then
+if [[ $# -ne 4 ]]; then
 	echo "Parameters not match"
 	exit 1
 fi
 
-DIR=${BASH_SOURCE[0]}/bin
-DIVISION=$DIR/division
-LABELINDEX=$DIR/labelindex
-SORT=$DIR/sort
-COUNT=$DIR/count
-NUMCOUNT=$DIR/numcount
-INDEX=$DIR/index
-NUMINDEX=$DIR/numindex
-PYTHON=python3
-TRANSFER=${BASH_SOURCE[0]}/py/transfer.py
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-TARGET=sample
+BIN=$DIR/bin
+DIVISION=$BIN/division
+LABELINDEX=$BIN/labelindex
+SORT=$BIN/sort
+COUNT=$BIN/count
+NUMCOUNT=$BIN/numcount
+INDEX=$BIN/index
+NUMINDEX=$BIN/numindex
+PYTHON=python3
+TRANSFER=$DIR/py/transfer.py
+
+TARGET=$1
 DIVDIR=$TARGET.div
 INDEXDIR=$TARGET.index
 LOG=log
@@ -25,8 +27,14 @@ OUT=out
 TOTALFIELD=40
 NUMFIELD=$(seq 1 13)
 CATEFIELD=$(seq 14 39)
-TRAINNUM=8000000
-TESTNUM=2000000
+TRAINNUM=$2
+TESTNUM=$3
+CHUNKS=$4
+
+echo "target: $TARGET"
+echo "#train-set: $TRAINNUM"
+echo "#test-set: $TESTNUM"
+echo "chunks: $CHUNKS"
 
 NUMTHRESHOLD=1000
 CATETHRESHOLD=5
@@ -89,8 +97,8 @@ done
 
 cd ..
 
-echo $PYTHON $TRANSFER $DIVDIR/$TARGET.{}.feat $TARGET.h5 --train $TRAINNUM --test $TESTNUM --fieldnum $TOTALFIELD --intervals $DIVDIR/$LOG
-$PYTHON $TRANSFER $DIVDIR/$TARGET.{}.feat $TARGET.h5 --train $TRAINNUM --test $TESTNUM --fieldnum $TOTALFIELD --intervals $DIVDIR/$LOG
+echo $PYTHON $TRANSFER $DIVDIR/$TARGET.{}.feat $TARGET.h5 --train $TRAINNUM --test $TESTNUM --fieldnum $TOTALFIELD --intervals $DIVDIR/$LOG --chunks $CHUNKS
+$PYTHON $TRANSFER $DIVDIR/$TARGET.{}.feat $TARGET.h5 --train $TRAINNUM --test $TESTNUM --fieldnum $TOTALFIELD --intervals $DIVDIR/$LOG --chunks $CHUNKS
 
 mkdir -p $INDEXDIR
 mv $DIVDIR/$TARGET.*.index $INDEXDIR/
