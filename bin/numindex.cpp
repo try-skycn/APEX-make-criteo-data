@@ -34,19 +34,27 @@ public:
 		FILE *indexfp = fopen(indexfile, "w");
 
 		uint mappair[2], cnt = 0;
-		while (fread(mappair, sizeof(uint), 2, countfp) == 2) {
-			if (cnt * 2 <= threshold || cnt + mappair[1] <= threshold) {
-				if (separators.empty()) { // start
+		if (fread(mappair, sizeof(uint), 2, countfp) == 2) {
+			// start
+			separators.push_back(mappair[0]);
+			cnt = 0;
+			
+			fprintf(indexfp, "%u %u\n", mappair[0], _start);
+			++_start;
+
+			// add first
+			cnt += mappair[1];
+
+			while (fread(mappair, sizeof(uint), 2, countfp) == 2) {
+				if (!(cnt * 2 <= threshold || cnt + mappair[1] <= threshold)) { // new
 					separators.push_back(mappair[0]);
+					cnt = 0;
+
 					fprintf(indexfp, "%u %u\n", mappair[0], _start);
 					++_start;
 				}
+				// add
 				cnt += mappair[1];
-			} else { // new
-				separators.push_back(mappair[0]);
-				cnt = 0;
-				fprintf(indexfp, "%u %u\n", mappair[0], _start);
-				++_start;
 			}
 		}
 
