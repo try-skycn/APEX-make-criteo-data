@@ -1,5 +1,5 @@
 #!/bin/bash
-if [[ $# -ne 5 ]]; then
+if [[ $# -ne 4 ]]; then
 	echo "Parameters not match"
 	exit 1
 fi
@@ -28,12 +28,11 @@ TOTALFIELD=40
 NUMFIELD=$(seq 1 13)
 CATEFIELD=$(seq 14 39)
 TRAINNUM=$2
-CHUNKS=$3
 
 echo "target: $TARGET"
 
-NUMTHRESHOLD=$4
-CATETHRESHOLD=$5
+NUMTHRESHOLD=$3
+CATETHRESHOLD=$4
 
 echo "numerical field threshold: $NUMTHRESHOLD"
 echo "categorical field threshold: $CATETHRESHOLD"
@@ -48,7 +47,6 @@ TESTNUM=$((TOTAL-TRAINNUM))
 echo "train-set: $TRAINNUM"
 echo "test-set: $TESTNUM"
 echo "total: $TOTAL"
-echo "chunks: $CHUNKS"
 
 cd $DIVDIR
 
@@ -104,11 +102,9 @@ done
 
 cd ..
 
-echo $PYTHON $TRANSFER $DIVDIR/$TARGET.{}.feat $TARGET.h5 --train $TRAINNUM --test $TESTNUM --fieldnum $TOTALFIELD --intervals $DIVDIR/$LOG --chunks $CHUNKS
-$PYTHON $TRANSFER $DIVDIR/$TARGET.{}.feat $TARGET.h5 --train $TRAINNUM --test $TESTNUM --fieldnum $TOTALFIELD --intervals $DIVDIR/$LOG --chunks $CHUNKS
+echo $PYTHON $TRANSFER $DIVDIR/$TARGET.{}.feat $TARGET.h5 --train $TRAINNUM --test $TESTNUM --fieldnum $TOTALFIELD --intervals $DIVDIR/$LOG --index $DIVDIR/$TARGET.{}.index
+$PYTHON $TRANSFER $DIVDIR/$TARGET.{}.feat $TARGET.h5 --train $TRAINNUM --test $TESTNUM --fieldnum $TOTALFIELD --intervals $DIVDIR/$LOG --index $DIVDIR/$TARGET.{}.index
 
-mkdir -p $INDEXDIR
-mv $DIVDIR/$TARGET.*.index $INDEXDIR/
 rm -r $DIVDIR
 
 echo Done.
