@@ -8,19 +8,19 @@ const int MAXBUFF = 256;
 
 class Source {
 private:
-	FILE *parent;
+	FILE *fp;
 
 public:
 	Source(const char *file) {
-		parent = fopen(file, "r");
+		fp = fopen(file, "r");
 	}
 
 	bool get(char *str) {
-		return fgets(str, MAXBUFF, parent);
+		return fgets(str, MAXBUFF, fp);
 	}
 
 	~Source() {
-		fclose(parent);
+		fclose(fp);
 	}
 };
 
@@ -39,22 +39,22 @@ private:
 
 public:
 	Map(const char *counterfile, const char *featmapfile, uint threshold) {
-		FILE *counterfp = fopen(counterfile, "rb");
+		FILE *fp = fopen(counterfile, "rb");
 
 		uint mappair[2], cnt = 0;
-		while (fread(mappair, sizeof(uint), 2, counterfp) == 2) {
+		while (fread(mappair, sizeof(uint), 2, fp) == 2) {
 			push(mappair[0], mappair[1], threshold, cnt);
 		}
 
-		fclose(counterfp);
+		fclose(fp);
 
-		FILE *featmapfp = fopen(featmapfile, "w");
+		fp = fopen(featmapfile, "w");
 
 		for (std::vector<uint>::const_iterator it = separators.begin(); it != separators.end(); ++it) {
-			fprintf(featmapfp, "%u\n", *it);
+			fprintf(fp, "%u\n", *it);
 		}
 
-		fclose(featmapfp);
+		fclose(fp);
 	}
 
 	uint get(const char *str) {
@@ -80,19 +80,19 @@ public:
 
 class Target {
 private:
-	FILE *parent;
+	FILE *fp;
 
 public:
 	Target(const char *file) {
-		parent = fopen(file, "wb");
+		fp = fopen(file, "wb");
 	}
 
 	void push(uint x) {
-		fwrite(&x, sizeof(uint), 1, parent);
+		fwrite(&x, sizeof(uint), 1, fp);
 	}
 
 	~Target() {
-		fclose(parent);
+		fclose(fp);
 	}
 };
 
