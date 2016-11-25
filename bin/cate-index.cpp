@@ -8,19 +8,19 @@ const uint MAXBUFF = 256;
 
 class Source {
 private:
-	FILE *parent;
+	FILE *fp;
 
 public:
 	Source(const char *file) {
-		parent = fopen(file, "r");
+		fp = fopen(file, "r");
 	}
 
 	bool get(char *str) {
-		return fgets(str, MAXBUFF, parent);
+		return fgets(str, MAXBUFF, fp);
 	}
 
 	~Source() {
-		fclose(parent);
+		fclose(fp);
 	}
 };
 
@@ -29,23 +29,20 @@ private:
 	std::unordered_map<uint, uint> m;
 
 public:
-	Map(const char *countfile, uint start, uint threshold, const char *indexfile) {
-		FILE *countfp = fopen(countfile, "rb");
-		FILE *indexfp = fopen(indexfile, "w");
+	Map(const char *counterfile, const char *featmapfile, uint threshold) {
+		FILE *counterfp = fopen(counterfile, "rb");
+		FILE *featmapfp = fopen(featmapfile, "w");
 
-		uint mappair[2], cnt = 0;
-		while (fread(mappair, sizeof(uint), 2, countfp) == 2) {
+		uint mappair[2];
+		while (fread(mappair, sizeof(uint), 2, counterfp) == 2) {
 			if (mappair[1] >= threshold) {
-				m.insert(std::pair<uint, uint>(mappair[0], start));
-				fprintf(indexfp, "%08x %u\n", mappair[0], start);
-				++start;
+				m.insert(std::pair<uint, uint>(mappair[0], m.size() + 1));
+				fprintf(featmapfp, "%08x\n", mappair[0]);
 			}
 		}
 
-		fclose(countfp);
-		fclose(indexfp);
-
-		printf("%u\n", start);
+		fclose(counterfp);
+		fclose(featmapfp);
 	}
 
 	uint get(const char *str) {
@@ -56,44 +53,96 @@ public:
 		sscanf(str, "%x", &x);
 		return m.count(x) ? m.at(x) : 0;
 	}
+
+	uint size() {
+		return m.size();
+	}
 };
 
 class Target {
 private:
-	FILE *parent;
+	FILE *fp;
 
 public:
 	Target(const char *file) {
-		parent = fopen(file, "wb");
+		fp = fopen(file, "wb");
 	}
 
 	void push(uint x) {
-		fwrite(&x, sizeof(uint), 1, parent);
+		fwrite(&x, sizeof(uint), 1, fp);
 	}
 
 	~Target() {
-		fclose(parent);
+		fclose(fp);
 	}
 };
 
-int main(int argc, char *argv[]) {
-	if (argc < 7) {
-		fprintf(stderr, "No enough arguments.\n");
-		return 1;
+struct Args {
+	const char *sourcefile;
+	const char *counterfile;
+	const char *featmapfile;
+	const char *targetfile;
+	uint threshold;
+};
+
+void parse_args(Args &args, int argc, char *argv[]) {
+	// default values
+	args.threshold = 0;
+
+	bool is_sourcefile = false;
+	bool is_counterfile = false;
+	bool is_featmapfile = false;
+	bool is_targetfile = false;
+
+	for (int i = 1; i < argc; ++i) {
+		if (!strcmp(argv[i], "--help")) {
+			throw 0;
+		} else if (!strcmp(argv[i], "--threshold")) {
+			if (!(i + 1 < argc)) throw 0;
+			sscanf(argv[++i], "%u", &args.threshold);
+		} else if (!strcmp(argv[i], "--featmap")) {
+			if (!(i + 1 < argc)) throw 0;
+			args.featmapfile = argv[++i];
+			is_featmapfile = true;
+		} else if (!strcmp(argv[i], "--counter")) {
+			if (!(i + 1 < argc)) throw 0;
+			args.counterfile = argv[++i];
+			is_counterfile = true;
+		} else if (!is_sourcefile) {
+			args.sourcefile = argv[i];
+			is_sourcefile = true;
+		} else if (!is_targetfile) {
+			args.targetfile = argv[i];
+			is_targetfile = true;
+		}
 	}
 
-	uint start, threshold;
-	sscanf(argv[3], "%u", &start);
-	sscanf(argv[4], "%u", &threshold);
+	if (!is_sourcefile) throw 0;
+	if (!is_counterfile) throw 0;
+	if (!is_featmapfile) throw 0;
+	if (!is_targetfile) throw 0;
+}
 
-	Source source(argv[1]);
-	Map m(argv[2], start, threshold, argv[5]);
-	Target target(argv[6]);
+int main(int argc, char *argv[]) {
+	Args args;
+	try {
+		parse_args(args, argc, argv);
+	} catch (int err) {
+		fprintf(stderr, "usage: sourcefile targetfile --counter counterfile --featmap featmapfile [--threshold threshold]\n");
+		fprintf(stderr, "print: num of categories\n");
+		return 0;
+	}
+
+	Source source(args.sourcefile);
+	Map m(args.counterfile, args.featmapfile, args.threshold);
+	Target target(args.targetfile);
 
 	char str[MAXBUFF];
 	while (source.get(str)) {
 		target.push(m.get(str));
 	}
+
+	printf("%u\n", m.size());
 
 	return 0;
 }
