@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
 		parse_args(args, argc, argv);
 	} catch (int err) {
 		fprintf(stderr, "usage: sourcefile targetfile --counter counterfile --featmap featmapfile --threshold threshold\n");
-		fprintf(stderr, "print: num of categories");
+		fprintf(stderr, "print: num of categories\n");
 		return 0;
 	}
 
