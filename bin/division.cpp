@@ -75,7 +75,7 @@ void parse_args(Args &args, int argc, char *argv[]) {
 			throw 0;
 		} else if (!strcmp(argv[i], "--num")) {
 			if (!(i + 1 < argc)) throw 0;
-			sscanf(argv[i + 1], "%d", &args.num_fields);
+			sscanf(argv[i + 1], "%u", &args.num_fields);
 			++i;
 			is_num_fields = true;
 		} else if (!is_sourcefile) {
