@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 
 typedef unsigned int uint;
 
@@ -30,11 +31,12 @@ private:
 	uint cnt;
 
 public:
-	Target(const char *prefix, uint _cnt) : cnt(_cnt) {
-		fps = new FILE*[cnt];
+	Target(const char *dir, uint _cnt) : cnt(_cnt) {
 		char file[MAXBUFF];
+
+		fps = new FILE*[cnt];
 		for (uint i = 0; i < cnt; ++i) {
-			sprintf(file, "%s.%d", prefix, i);
+			sprintf(file, "%s/%d", dir, i);
 			fps[i] = fopen(file, "wb");
 		}
 	}
@@ -61,13 +63,13 @@ public:
 
 struct Args {
 	const char *sourcefile;
-	const char *targetprefix;
+	const char *targetdir;
 	int num_fields;
 };
 
 void parse_args(Args &args, int argc, char *argv[]) {
 	bool is_sourcefile = false;
-	bool is_targetprefix = false;
+	bool is_targetdir = false;
 	bool is_num_fields = false;
 
 	for (int i = 1; i < argc; ++i) {
@@ -80,13 +82,13 @@ void parse_args(Args &args, int argc, char *argv[]) {
 		} else if (!is_sourcefile) {
 			args.sourcefile = argv[i];
 			is_sourcefile = true;
-		} else if (!is_targetprefix) {
-			args.targetprefix = argv[i];
-			is_targetprefix = true;
+		} else if (!is_targetdir) {
+			args.targetdir = argv[i];
+			is_targetdir = true;
 		}
 	}
 	if (!is_sourcefile) throw 0;
-	if (!is_targetprefix) throw 0;
+	if (!is_targetdir) throw 0;
 	if (!is_num_fields) throw 0;
 }
 
@@ -95,13 +97,13 @@ int main(int argc, char *argv[]){
 	try {
 		parse_args(args, argc, argv);
 	} catch (int err) {
-		fprintf(stderr, "usage: sourcefile targetprefix --num num_fields\n");
+		fprintf(stderr, "usage: sourcefile targetdir --num num_fields\n");
 		fprintf(stderr, "print: num of lines\n");
 		return 0;
 	}
 	
 	Source source(args.sourcefile);
-	Target target(args.targetprefix, args.num_fields);
+	Target target(args.targetdir, args.num_fields);
 
 	char str[MAXBUFF];
 	uint num_lines = 0;
