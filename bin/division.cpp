@@ -75,8 +75,7 @@ void parse_args(Args &args, int argc, char *argv[]) {
 			throw 0;
 		} else if (!strcmp(argv[i], "--num")) {
 			if (!(i + 1 < argc)) throw 0;
-			sscanf(argv[i + 1], "%u", &args.num_fields);
-			++i;
+			sscanf(argv[++i], "%u", &args.num_fields);
 			is_num_fields = true;
 		} else if (!is_sourcefile) {
 			args.sourcefile = argv[i];
@@ -100,8 +99,6 @@ int main(int argc, char *argv[]){
 		fprintf(stderr, "print: num of lines\n");
 		return 0;
 	}
-
-	return 0;
 	
 	Source source(args.sourcefile);
 	Target target(args.targetprefix, args.num_fields);
