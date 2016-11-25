@@ -1,164 +1,157 @@
 #include <cstdio>
 #include <cstring>
+#include <vector>
 #include <queue>
+#include <algorithm>
 
 typedef unsigned int uint;
 
+const uint MAXPOOL = 1 << 28;
 const uint MAXBUFF = 256;
 
-class Source {
-private:
-	FILE *parent;
+void dump(uint *pool, uint &head, const char *tmpdir, uint &cnt) {
+	static char file[MAXBUFF];
+	if (head) { // if something to dump
+		std::sort(pool, pool + head);
+		sprintf(file, "%s/%d", tmpdir, cnt++);
+		FILE *fp = fopen(file, "wb");
+		fwrite(pool, sizeof(uint), head, fp);
+		fclose(fp);
+		head = 0; // clear the pool
+	}
+}
 
-public:
-	Source(const char *file) {
-		parent = fopen(file, "rb");
+uint divide(const char *sourcefile, const char *tmpdir, uint pool_size) {
+	uint *pool = new uint[pool_size], head = 0;
+
+	FILE *fp = fopen(sourcefile, "r");
+
+	uint x = 0, cnt = 0;
+	while (fscanf(fp, "%x", &x) != EOF) {
+		pool[head++] = x;
+		if (head == pool_size) {
+			dump(pool, head, tmpdir, cnt);
+		}
+	}
+	dump(pool, head, tmpdir, cnt);
+
+	fclose(fp);
+
+	delete[] pool;
+
+	return cnt;
+}
+
+struct FPAIR {
+	uint x, fi;
+
+	FPAIR(uint _x, uint _fi) : x(_x), fi(_fi) {
 	}
 
-	bool get(uint &x) {
-		uint readsize = fread(&x, sizeof(uint), 1, parent);
-		return readsize == 1;
-	}
-
-	~Source() {
-		fclose(parent);
+	bool operator<(const FPAIR &r) const {
+		return x > r.x;
 	}
 };
 
-class MultiQueue {
-private:
-	struct FPAIR {
-		uint x, fi;
+void merge(const char *tmpdir, uint cnt, const char *targetfile) {
+	char file[MAXBUFF];
+	FILE **tmpfps = new FILE *[cnt], *fp = fopen(targetfile, "wb");
+	for (int i = 0; i < cnt; ++i) {
+		sprintf(file, "%s/%d", tmpdir, i);
+		tmpfps[i] = fopen(file, "rb");
+	}
 
-		FPAIR(uint _x, uint _fi) : x(_x), fi(_fi) {
-		}
-
-		bool operator<(const FPAIR &r) const {
-			return x > r.x;
-		}
-	};
-
-	Source **parents;
-	uint cnt;
 	std::priority_queue<FPAIR> q;
-
-	void push(int i) {
-		uint x;
-		if (parents[i]->get(x)) {
+	uint x;
+	for (int i = 0; i < cnt; ++i) {
+		if (fread(&x, sizeof(uint), 1, tmpfps[i])) {
 			q.push(FPAIR(x, i));
 		}
 	}
 
-public:
-	MultiQueue(const char *prefix, uint _cnt) : cnt(_cnt) {
-		parents = new Source*[cnt];
-		char file[MAXBUFF];
-		for (int i = 0; i < cnt; ++i) {
-			sprintf(file, "%s.%d", prefix, i);
-			parents[i] = new Source(file);
-		}
-
-		for (int i = 0; i < cnt; ++i) {
-			push(i);
-		}
-	}
-
-	bool get(uint &x) {
-		if (q.empty()) {
-			return false;
-		}
-
+	uint nowx = 0, num = 0;
+	bool start = true;
+	while (!q.empty()) {
 		FPAIR fpair = q.top();
 		q.pop();
 
-		x = fpair.x;
-
-		push(fpair.fi);
-		return true;
-	}
-
-	~MultiQueue() {
-		for (int i = 0; i < cnt; ++i) {
-			delete parents[i];
-			parents[i] = 0;
-		}
-
-		delete[] parents;
-		parents = 0;
-	}
-};
-
-class Target {
-private:
-	FILE *parent;
-
-public:
-	Target(const char *file) {
-		parent = fopen(file, "wb");
-	}
-
-	void push(uint x, uint cnt) {
-		fwrite(&x, sizeof(uint), 1, parent);
-		fwrite(&cnt, sizeof(uint), 1, parent);
-	}
-
-	~Target() {
-		fclose(parent);
-	}
-};
-
-class TargetCounter {
-private:
-	Target *parent;
-	uint x, cnt;
-
-	void flush() {
-		if (cnt) {
-			parent->push(x, cnt);
-			x = 0;
-			cnt = 0;
-		}
-	}
-
-public:
-	TargetCounter(const char *file) : x(0), cnt(0) {
-		parent = new Target(file);
-	}
-
-	void push(uint _x) {
-		if (x == _x) {
-			++cnt;
+		if (start) {
+			nowx = fpair.x;
+			num = 1;
+			start = false;
+		} else if (nowx == fpair.x) {
+			++num;
 		} else {
-			flush();
-			x = _x;
-			cnt = 1;
+			fwrite(&nowx, sizeof(uint), 1, fp);
+			fwrite(&num, sizeof(uint), 1, fp);
+			nowx = fpair.x;
+			num = 1;
+		}
+
+		if (fread(&x, sizeof(uint), 1, tmpfps[fpair.fi])) {
+			q.push(FPAIR(x, fpair.fi));
 		}
 	}
+	fwrite(&nowx, sizeof(uint), 1, fp);
+	fwrite(&num, sizeof(uint), 1, fp);
 
-	~TargetCounter() {
-		flush();
-
-		delete parent;
-		parent = 0;
+	fclose(fp);
+	for (int i = 0; i < cnt; ++i) {
+		fclose(tmpfps[i]);
 	}
+	delete[] tmpfps;
+}
+
+struct Args {
+	const char *sourcefile;
+	const char *targetfile;
+	const char *tmpdir;
+	uint pool_size;
 };
 
-int main(int argc, char *argv[]) {
-	if (argc < 4) {
-		fprintf(stderr, "No enough arguments.\n");
-		return 1;
+void parse_args(Args &args, int argc, const char *argv[]) {
+	// default values
+	args.tmpdir = ".tmp";
+	args.pool_size = 1 << 28;
+
+	bool is_sourcefile = false;
+	bool is_targetfile = false;
+	bool is_tmpdir = false;
+
+	for (int i = 1; i < argc; ++i) {
+		if (!strcmp(argv[i], "--help")) {
+			throw 0;
+		} else if (!strcmp(argv[i], "--tmp")) {
+			if (!(i + 1 < argc)) throw 0;
+			args.tmpdir = argv[++i];
+			is_tmpdir = true;
+		} else if (!strcmp(argv[i], "--pool")) {
+			if (!(i + 1 < argc)) throw 0;
+			sscanf(argv[++i], "%u", &args.pool_size);
+		} else if (!is_sourcefile) {
+			args.sourcefile = argv[i];
+			is_sourcefile = true;
+		} else if (!is_targetfile) {
+			args.targetfile = argv[i];
+			is_targetfile = true;
+		}
+	}
+	if (!is_sourcefile) throw 0;
+	if (!is_targetfile) throw 0;
+	if (!is_tmpdir) throw 0;
+}
+
+int main(int argc, const char *argv[]) {
+	Args args;
+	try {
+		parse_args(args, argc, argv);
+	} catch (int err) {
+		fprintf(stderr, "usage: sourcefile targetdir --tmp tmpdir [--pool pool_size]\n");
+		return 0;
 	}
 
-	uint cnt;
-	sscanf(argv[2], "%u", &cnt);
-
-	MultiQueue source(argv[1], cnt);
-	TargetCounter target(argv[3]);
-
-	uint x;
-	while (source.get(x)) {
-		target.push(x);
-	}
+	uint cnt = divide(args.sourcefile, args.tmpdir, args.pool_size);
+	merge(args.tmpdir, cnt, args.targetfile);
 
 	return 0;
 }
