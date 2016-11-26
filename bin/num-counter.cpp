@@ -15,7 +15,7 @@ struct CntPair {
 	CntPair(int _x, uint _cnt) : x(_x), cnt(_cnt) {
 	}
 
-	bool operator<(const CntPair& r) {
+	bool operator<(const CntPair& r) const {
 		return x < r.x;
 	}
 };
