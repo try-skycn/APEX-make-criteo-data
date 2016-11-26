@@ -11,6 +11,8 @@ numcounter = join(bindir, "num-counter")
 numindex = join(bindir, "num-index")
 catecounter = join(bindir, "cate-counter")
 cateindex = join(bindir, "cate-index")
+featmap = join(bindir, "featmap")
+merge = join(bindir, "merge")
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -42,15 +44,41 @@ os.makedirs(divdir, exist_ok=True)
 os.makedirs(cntdir, exist_ok=True)
 os.makedirs(idxdir, exist_ok=True)
 os.makedirs(fmdir, exist_ok=True)
-os.makedirs(tmpdir, exist_ok=True)
 
 run([division, args.sourcefile, divdir, "--num", str(len(fields))])
 for i, f in enumerate(fields):
+	divfile = join(divdir, str(i))
 	if f == "label":
-		run([labelindex, join(divdir, str(i)), join(idxdir, str(i))])
+		run([labelindex, divfile, join(idxdir, str(i))])
 	elif f == "num":
-		run([numcounter, join(divdir, str(i)), join(cntdir, str(i))])
-		run([numindex, join(divdir, str(i)), join(idxdir, str(i)), "--counter", join(cntdir, str(i)), "--featmap", join(fmdir, str(i)), "--threshold", str(args.num_threshold)])
+		cntfile = join(cntdir, str(i))
+		idxfile = join(idxdir, str(i))
+		fmfile = join(fmdir, str(i))
+
+		run([numcounter, divfile, cntfile])
+		run([numindex, divfile, idxfile, "--counter", cntfile, "--featmap", fmfile, "--threshold", str(args.num_threshold)])
+
+		os.remove(cntfile)
+
 	elif f == "cate":
-		run([catecounter, join(divdir, str(i)), join(cntdir, str(i)), "--tmp", tmpdir])
-		run([cateindex, join(divdir, str(i)), join(idxdir, str(i)), "--counter", join(cntdir, str(i)), "--featmap", join(fmdir, str(i)), "--threshold", str(args.cate_threshold)])
+		cntfile = join(cntdir, str(i))
+		idxfile = join(idxdir, str(i))
+		fmfile = join(fmdir, str(i))
+
+		os.makedirs(tmpdir, exist_ok=True)
+		run([catecounter, divfile, cntfile, "--tmp", tmpdir])
+		shutil.rmtree(tmpdir)
+		run([cateindex, divfile, idxfile, "--counter", cntfile, "--featmap", fmfile, "--threshold", str(args.cate_threshold)])
+
+		os.remove(cntfile)
+
+	os.remove(divfile)
+
+shutil.rmtree(divdir)
+shutil.rmtree(cntdir)
+
+os.makedirs(args.targetdir, exist_ok=True)
+featfields = [i for i, f in enumerate(fields) if f in ["num", "cate"]]
+run([featmap, fmdir, targetfeatmap], input=' '.join([str(i) for i in featfields]), universal_newlines=True)
+shutil.rmtree(fmdir)
+
