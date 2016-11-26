@@ -24,15 +24,10 @@ struct Args {
 void parse_args(Args &args, int argc, char *argv[]) {
 	bool is_sourcedir = false;
 	bool is_targetfile = false;
-	bool is_num_fields = false;
 
 	for (int i = 1; i < argc; ++i) {
 		if (!strcmp(argv[i], "--help")) {
 			throw 0;
-		} else if (!strcmp(argv[i], "--num")) {
-			if (!(i + 1 < argc)) throw 0;
-			sscanf(argv[++i], "%u", &args.num_fields);
-			is_num_fields = true;
 		} else if (!is_sourcedir) {
 			args.sourcedir = argv[i];
 			is_sourcedir = true;
@@ -43,7 +38,6 @@ void parse_args(Args &args, int argc, char *argv[]) {
 	}
 	if (!is_sourcedir) throw 0;
 	if (!is_targetfile) throw 0;
-	if (!is_num_fields) throw 0;
 }
 
 int main(int argc, char *argv[]){
@@ -51,13 +45,15 @@ int main(int argc, char *argv[]){
 	try {
 		parse_args(args, argc, argv);
 	} catch (int err) {
-		fprintf(stderr, "usage: sourcedir targetfile --num num_fields\n");
+		fprintf(stderr, "usage: sourcedir targetfile\n");
+		fprintf(stderr, "input: a list of field indices\n");
 		return 0;
 	}
 
 	FILE *t = fopen(args.targetfile, "w");
-	for (int i = 0; i < args.num_fields; ++i) {
-		pass(args.sourcedir, i, t);
+	uint idx = 0;
+	while (scanf("%u", &idx) != EOF) {
+		pass(args.sourcedir, idx, t);
 	}
 	fclose(t);
 
