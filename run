@@ -18,8 +18,8 @@ def parse_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("sourcefile")
 	parser.add_argument("targetdir")
-	parser.add_argument("--num_threshold", type=int, default=0)
-	parser.add_argument("--cate_threshold", type=int, default=0)
+	parser.add_argument("--train", type=int, required=True)
+	parser.add_argument("--threshold", type=float, default=0.0)
 	parser.add_argument("--div", default="div")
 	parser.add_argument("--cnt", default="cnt")
 	parser.add_argument("--idx", default="idx")
@@ -46,7 +46,12 @@ os.makedirs(idxdir, exist_ok=True)
 os.makedirs(fmdir, exist_ok=True)
 
 start_indices, summation = [], 0
-run([division, args.sourcefile, divdir, "--num", str(len(fields))])
+proc = run([division, args.sourcefile, divdir, "--num", str(len(fields))], stdout=PIPE)
+
+num_lines = int(proc.stdout.strip())
+num_threshold = int(num_lines * args.threshold)
+cate_threshold = int(num_lines * args.threshold)
+
 for i, f in enumerate(fields):
 	divfile = join(divdir, str(i))
 	if f == "label":
@@ -61,7 +66,7 @@ for i, f in enumerate(fields):
 		fmfile = join(fmdir, str(i))
 
 		run([numcounter, divfile, cntfile])
-		proc = run([numindex, divfile, idxfile, "--counter", cntfile, "--featmap", fmfile, "--threshold", str(args.num_threshold)], stdout=PIPE)
+		proc = run([numindex, divfile, idxfile, "--counter", cntfile, "--featmap", fmfile, "--threshold", str(num_threshold)], stdout=PIPE)
 		summation += int(proc.stdout.strip())
 
 		os.remove(cntfile)
@@ -75,7 +80,7 @@ for i, f in enumerate(fields):
 		os.makedirs(tmpdir, exist_ok=True)
 		run([catecounter, divfile, cntfile, "--tmp", tmpdir])
 		shutil.rmtree(tmpdir)
-		proc = run([cateindex, divfile, idxfile, "--counter", cntfile, "--featmap", fmfile, "--threshold", str(args.cate_threshold)], stdout=PIPE)
+		proc = run([cateindex, divfile, idxfile, "--counter", cntfile, "--featmap", fmfile, "--threshold", str(cate_threshold)], stdout=PIPE)
 		summation += int(proc.stdout.strip())
 
 		os.remove(cntfile)
@@ -91,3 +96,4 @@ run([featmap, fmdir, targetfeatmap], input=' '.join([str(i) for i in featfields]
 shutil.rmtree(fmdir)
 
 run([merge, idxdir, targetfile], input=' '.join([str(i) for i in start_indices]), universal_newlines=True)
+shutil.rmtree(idxdir)
