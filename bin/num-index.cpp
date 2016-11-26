@@ -29,7 +29,7 @@ private:
 	std::vector<uint> separators;
 
 	void push(uint x, uint num, uint threshold, uint &cnt) {
-		if (separators.empty() || !(cnt * 2 <= threshold || cnt + num <= threshold)) { // new
+		if (separators.empty() || cnt >= threshold) { // new
 			separators.push_back(x);
 			cnt = num;
 		} else { // new
