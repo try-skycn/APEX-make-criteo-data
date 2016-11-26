@@ -45,22 +45,29 @@ os.makedirs(cntdir, exist_ok=True)
 os.makedirs(idxdir, exist_ok=True)
 os.makedirs(fmdir, exist_ok=True)
 
+start_indices, summation = [], 0
 run([division, args.sourcefile, divdir, "--num", str(len(fields))])
 for i, f in enumerate(fields):
 	divfile = join(divdir, str(i))
 	if f == "label":
+		start_indices.append('.')
+
 		run([labelindex, divfile, join(idxdir, str(i))])
 	elif f == "num":
+		start_indices.append(summation + 1)
+
 		cntfile = join(cntdir, str(i))
 		idxfile = join(idxdir, str(i))
 		fmfile = join(fmdir, str(i))
 
 		run([numcounter, divfile, cntfile])
-		run([numindex, divfile, idxfile, "--counter", cntfile, "--featmap", fmfile, "--threshold", str(args.num_threshold)])
+		proc = run([numindex, divfile, idxfile, "--counter", cntfile, "--featmap", fmfile, "--threshold", str(args.num_threshold)], stdout=PIPE)
+		summation += int(proc.stdout.strip())
 
 		os.remove(cntfile)
 
 	elif f == "cate":
+		start_indices.append(summation + 1)
 		cntfile = join(cntdir, str(i))
 		idxfile = join(idxdir, str(i))
 		fmfile = join(fmdir, str(i))
@@ -68,7 +75,8 @@ for i, f in enumerate(fields):
 		os.makedirs(tmpdir, exist_ok=True)
 		run([catecounter, divfile, cntfile, "--tmp", tmpdir])
 		shutil.rmtree(tmpdir)
-		run([cateindex, divfile, idxfile, "--counter", cntfile, "--featmap", fmfile, "--threshold", str(args.cate_threshold)])
+		proc = run([cateindex, divfile, idxfile, "--counter", cntfile, "--featmap", fmfile, "--threshold", str(args.cate_threshold)], stdout=PIPE)
+		summation += int(proc.stdout.strip())
 
 		os.remove(cntfile)
 
@@ -82,3 +90,4 @@ featfields = [i for i, f in enumerate(fields) if f in ["num", "cate"]]
 run([featmap, fmdir, targetfeatmap], input=' '.join([str(i) for i in featfields]), universal_newlines=True)
 shutil.rmtree(fmdir)
 
+run([merge, idxdir, targetfile], input=' '.join([str(i) for i in start_indices]), universal_newlines=True)

@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstring>
+#include <vector>
 
 typedef unsigned int uint;
 
@@ -23,15 +24,10 @@ struct Args {
 void parse_args(Args &args, int argc, char *argv[]) {
 	bool is_sourcedir = false;
 	bool is_targetfile = false;
-	bool is_num_fields = false;
 
 	for (int i = 1; i < argc; ++i) {
 		if (!strcmp(argv[i], "--help")) {
 			throw 0;
-		} else if (!strcmp(argv[i], "--num")) {
-			if (!(i + 1 < argc)) throw 0;
-			sscanf(argv[++i], "%u", &args.num_fields);
-			is_num_fields = true;
 		} else if (!is_sourcedir) {
 			args.sourcedir = argv[i];
 			is_sourcedir = true;
@@ -42,7 +38,6 @@ void parse_args(Args &args, int argc, char *argv[]) {
 	}
 	if (!is_sourcedir) throw 0;
 	if (!is_targetfile) throw 0;
-	if (!is_num_fields) throw 0;
 }
 
 int main(int argc, char *argv[]){
@@ -50,23 +45,50 @@ int main(int argc, char *argv[]){
 	try {
 		parse_args(args, argc, argv);
 	} catch (int err) {
-		fprintf(stderr, "usage: sourcedir targetfile --num num_fields\n");
+		fprintf(stderr, "usage: sourcedir targetfile\n");
+		fprintf(stderr, "input: a list of starting index of fields\n");
+		fprintf(stderr, "       - \'.\' stands for \'label\' field\n");
+		fprintf(stderr, "       - positive numbers stands for the starting index\n");
 		return 0;
 	}
 
 	static char file[MAXBUFF];
 
-	FILE **sfps = new FILE *[args.num_fields], *t = fopen(args.targetfile, "wb");
-	for (int i = 0; i < args.num_fields; ++i) {
+	std::vector<bool> label;
+	std::vector<uint> start;
+	while (scanf("%s", file) != EOF) {
+		if (*file == '.') {
+			label.push_back(true);
+			start.push_back(0);
+		} else {
+			uint x;
+			sscanf(file, "%u", &x);
+			label.push_back(false);
+			start.push_back(x);
+		}
+	}
+
+	uint num_fields = start.size();
+
+	FILE **sfps = new FILE *[num_fields], *t = fopen(args.targetfile, "wb");
+	for (int i = 0; i < num_fields; ++i) {
 		sprintf(file, "%s/%d", args.sourcedir, i);
 		sfps[i] = fopen(file, "rb");
 	}
 
-	uint *buff = new uint[args.num_fields];
+	uint *buff = new uint[num_fields];
+	while (get(sfps, num_fields, buff)) {
+		for (int i = 0; i < num_fields; ++i) {
+			if (!label[i] && buff[i]) {
+				buff[i] += start[i] - 1;
+			}
+		}
+		fwrite(buff, sizeof(uint), num_fields, t);
+	}
 	
 	fclose(t);
-	for (int i = 0; i < args.num_fields; ++i) {
-		fclose(sfps);
+	for (int i = 0; i < num_fields; ++i) {
+		fclose(sfps[i]);
 	}
 	delete[] sfps;
 
