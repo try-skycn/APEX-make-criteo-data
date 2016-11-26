@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+import subprocess, sys, os, argparse, shutil
+from os.path import join
+from subprocess import run, PIPE
+
+path = os.path.dirname(os.path.realpath(__file__))
+bindir = join(path, "bin")
+division = join(bindir, "division")
+labelindex = join(bindir, "label-index")
+numcounter = join(bindir, "num-counter")
+numindex = join(bindir, "num-index")
+catecounter = join(bindir, "cate-counter")
+cateindex = join(bindir, "cate-index")
+
+def parse_args():
+	parser = argparse.ArgumentParser()
+	parser.add_argument("sourcefile")
+	parser.add_argument("targetdir")
+	parser.add_argument("--num_threshold", type=int, default=0)
+	parser.add_argument("--cate_threshold", type=int, default=0)
+	parser.add_argument("--div", default="div")
+	parser.add_argument("--cnt", default="cnt")
+	parser.add_argument("--idx", default="idx")
+	parser.add_argument("--fm", default="fm")
+	parser.add_argument("--tmp", default="tmp")
+	return parser.parse_args()
+
+args = parse_args()
+fields = input().split()
+
+divdir = "{}.{}".format(args.sourcefile, args.div)
+cntdir = "{}.{}".format(args.sourcefile, args.cnt)
+idxdir = "{}.{}".format(args.sourcefile, args.idx)
+fmdir = "{}.{}".format(args.sourcefile, args.fm)
+tmpdir = "{}.{}".format(args.sourcefile, args.tmp)
+
+targetfile = join(args.targetdir, "data")
+targetfeatmap = join(args.targetdir, ".featmap")
+targetmeta = join(args.targetdir, ".meta")
+
+os.makedirs(divdir, exist_ok=True)
+os.makedirs(cntdir, exist_ok=True)
+os.makedirs(idxdir, exist_ok=True)
+os.makedirs(fmdir, exist_ok=True)
+os.makedirs(tmpdir, exist_ok=True)
+
+run([division, args.sourcefile, divdir, "--num", str(len(fields))])
+for i, f in enumerate(fields):
+	if f == "label":
+		run([labelindex, join(divdir, str(i)), join(idxdir, str(i))])
+	elif f == "num":
+		run([numcounter, join(divdir, str(i)), join(cntdir, str(i))])
+		run([numindex, join(divdir, str(i)), join(idxdir, str(i)), "--counter", join(cntdir, str(i)), "--featmap", join(fmdir, str(i)), "--threshold", str(args.num_threshold)])
+	elif f == "cate":
+		run([catecounter, join(divdir, str(i), join(cntdir, str(i), "--tmp", tmpdir))])
+		run([cateindex, join(divdir, str(i)), join(idxdir, str(i)), "--counter", join(cntdir, str(i)), "--featmap", join(fmdir, str(i)), "--threshold", str(args.cate_threshold)])
