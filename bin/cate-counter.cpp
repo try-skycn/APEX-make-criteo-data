@@ -111,7 +111,6 @@ struct Args {
 
 void parse_args(Args &args, int argc, const char *argv[]) {
 	// default values
-	args.tmpdir = ".tmp";
 	args.pool_size = 1 << 28;
 
 	bool is_sourcefile = false;
