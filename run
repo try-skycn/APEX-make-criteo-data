@@ -52,5 +52,5 @@ for i, f in enumerate(fields):
 		run([numcounter, join(divdir, str(i)), join(cntdir, str(i))])
 		run([numindex, join(divdir, str(i)), join(idxdir, str(i)), "--counter", join(cntdir, str(i)), "--featmap", join(fmdir, str(i)), "--threshold", str(args.num_threshold)])
 	elif f == "cate":
-		run([catecounter, join(divdir, str(i), join(cntdir, str(i), "--tmp", tmpdir))])
+		run([catecounter, join(divdir, str(i)), join(cntdir, str(i)), "--tmp", tmpdir])
 		run([cateindex, join(divdir, str(i)), join(idxdir, str(i)), "--counter", join(cntdir, str(i)), "--featmap", join(fmdir, str(i)), "--threshold", str(args.cate_threshold)])
