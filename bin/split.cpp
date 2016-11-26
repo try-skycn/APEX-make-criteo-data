@@ -8,7 +8,7 @@ typedef unsigned char uchar;
 
 void pass(FILE *s, uint entrysize, uint count, FILE *t, uchar *buff) {
 	for (; count; --count) {
-		if (fread(buff, sizeof(uchar), entrysize, s)) {
+		if (fread(buff, sizeof(uchar), entrysize, s) == entrysize) {
 			fwrite(buff, sizeof(uchar), entrysize, t);
 		}
 	}
