@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import subprocess, sys, os, argparse, shutil
+import subprocess, sys, os, argparse, shutil, json
 from os.path import join
 from subprocess import run, PIPE
 
@@ -13,6 +13,7 @@ catecounter = join(bindir, "cate-counter")
 cateindex = join(bindir, "cate-index")
 featmap = join(bindir, "featmap")
 merge = join(bindir, "merge")
+split = join(bindir, "split")
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -25,6 +26,7 @@ def parse_args():
 	parser.add_argument("--idx", default="idx")
 	parser.add_argument("--fm", default="fm")
 	parser.add_argument("--tmp", default="tmp")
+	parser.add_argument("--quiet", "-q", dest="verbose", action="store_false")
 	return parser.parse_args()
 
 args = parse_args()
@@ -37,6 +39,8 @@ fmdir = "{}.{}".format(args.sourcefile, args.fm)
 tmpdir = "{}.{}".format(args.sourcefile, args.tmp)
 
 targetfile = join(args.targetdir, "data")
+trainfile = join(args.targetdir, "train")
+testfile = join(args.targetdir, "test")
 targetfeatmap = join(args.targetdir, ".featmap")
 targetmeta = join(args.targetdir, ".meta")
 
@@ -45,6 +49,8 @@ os.makedirs(cntdir, exist_ok=True)
 os.makedirs(idxdir, exist_ok=True)
 os.makedirs(fmdir, exist_ok=True)
 
+if args.verbose:
+	print("division")
 start_indices, summation = [], 0
 proc = run([division, args.sourcefile, divdir, "--num", str(len(fields))], stdout=PIPE)
 
@@ -53,6 +59,8 @@ num_threshold = int(num_lines * args.threshold)
 cate_threshold = int(num_lines * args.threshold)
 
 for i, f in enumerate(fields):
+	if args.verbose:
+		print("process field {i}, type {f}".format(i=i, f=f))
 	divfile = join(divdir, str(i))
 	if f == "label":
 		start_indices.append('.')
@@ -90,10 +98,34 @@ for i, f in enumerate(fields):
 shutil.rmtree(divdir)
 shutil.rmtree(cntdir)
 
+if args.verbose:
+	print("featmap")
 os.makedirs(args.targetdir, exist_ok=True)
 featfields = [i for i, f in enumerate(fields) if f in ["num", "cate"]]
 run([featmap, fmdir, targetfeatmap], input=' '.join([str(i) for i in featfields]), universal_newlines=True)
 shutil.rmtree(fmdir)
 
+if args.verbose:
+	print("merge")
 run([merge, idxdir, targetfile], input=' '.join([str(i) for i in start_indices]), universal_newlines=True)
 shutil.rmtree(idxdir)
+
+if args.verbose:
+	print("split")
+entrysize = len(fields) * 4
+run([split, targetfile, str(entrysize), trainfile, str(args.train), testfile])
+os.remove(targetfile)
+
+meta = {
+	"width": len(fields),
+	"size": {
+		"train": args.train,
+		"test": num_lines - args.train
+	},
+	"vocabulary": summation + 1
+}
+
+with open(targetmeta, "w") as f:
+	print(json.dumps(meta), file=f)
+if args.verbose:
+	print("done")
