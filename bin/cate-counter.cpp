@@ -146,7 +146,7 @@ int main(int argc, const char *argv[]) {
 	try {
 		parse_args(args, argc, argv);
 	} catch (int err) {
-		fprintf(stderr, "usage: sourcefile targetdir --tmp tmpdir [--pool pool_size]\n");
+		fprintf(stderr, "usage: sourcefile targetfile --tmp tmpdir [--pool pool_size]\n");
 		return 0;
 	}
 
