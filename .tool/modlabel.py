@@ -10,3 +10,9 @@ def cate2index(lst):
 
 def catemap(m):
 	return lambda x: int(x)
+
+def size(m):
+	return None
+
+def dtype():
+	return "num"

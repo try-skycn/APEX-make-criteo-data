@@ -11,4 +11,10 @@ def cate2index(lst):
 	return {x: i for i, x in enumerate(lst[1:], start=1)}
 
 def catemap(m):
-	return lambda x: m.get(x, 0)
+	return lambda x: m.get(x, 0) if x != "" else 0
+
+def size(m):
+	return len(m)
+
+def dtype():
+	return "cate"
