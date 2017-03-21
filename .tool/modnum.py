@@ -19,3 +19,6 @@ class Counter(collections.Counter):
 
 def cate2index(lst):
 	return {j: i for i, (l, r) in enumerate(lst[1:], start=1) for j in range(l, r)}
+
+def catemap(m):
+	return lambda x: m.get(int(x), 0)
