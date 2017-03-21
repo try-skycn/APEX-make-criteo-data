@@ -7,7 +7,7 @@ def parse_args():
 
 args = parse_args()
 
-for _, line in util.showenum(sys.stdin):
+for _, line in util.enum(sys.stdin):
 	lst = line.strip().split('\t')
 	if lst[8] == '-1':
 		lst[8] = ''
