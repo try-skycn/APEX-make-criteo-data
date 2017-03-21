@@ -2,7 +2,8 @@ import collections
 
 class Counter(collections.Counter):
 	def add(self, element):
-		super(Counter, self).update([element])
+		if element != "":
+			super(Counter, self).update([int(element)])
 
 	def index2cate(self, threshold):
 		lst = list(self.items())

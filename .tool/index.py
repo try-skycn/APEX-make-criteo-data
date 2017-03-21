@@ -19,13 +19,13 @@ counters = [mod.Counter() for mod in mods]
 print("Reading source file ...", file=sys.stderr)
 with open(args.source, "r") as f:
 	for _, line in util.enum(f):
-		for counter, x in zip(counters, lins.strip().split('\t')):
+		for counter, x in zip(counters, line.strip().split('\t')):
 			counter.add(x)
 
 print("Making index map ...", file=sys.stderr)
 index2cate_maps = [counter.index2cate(args.threshold) for counter in counters]
 del counters
-catemaps = [mod.catemap(mod.cate2index(lst)) mod, lst in zip(mods, index2cate_maps)]
+catemaps = [mod.catemap(mod.cate2index(lst)) for mod, lst in zip(mods, index2cate_maps)]
 
 def count_lines(filename):
 	print("Counting lines for file " + filename + " ...", file=sys.stderr)
@@ -38,7 +38,7 @@ def indexfile(filename, dsetname, ftarget):
 	print("Indexing file " + filename + " ...", file=sys.stderr)
 	dset = ftarget.create_dataset(dsetname, [size, len(mods)], dtype=np.int32)
 	with open(filename, "r") as f:
-		for i, line in util.enum(fin):
+		for i, line in util.enum(f):
 			dset[i - 1] = np.array([m(x) for m, x in zip(catemaps, line.strip().split('\t'))])
 
 ftarget = File(args.target, "w")
